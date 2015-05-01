@@ -19,6 +19,44 @@ namespace Microsoft.AspNet.Razor.Test.Generator
         private static IEnumerable<TagHelperDescriptor> PrefixedPAndInputTagHelperDescriptors
             => BuildPAndInputTagHelperDescriptors("THS");
 
+        private static IEnumerable<TagHelperDescriptor> MinimizedTagHelperDescriptors
+        {
+            get
+            {
+                return new[]
+                {
+                    new TagHelperDescriptor(
+                        tagName: "*",
+                        typeName: "CatchAllTagHelper",
+                        assemblyName: "SomeAssembly",
+                        attributes: new[]
+                        {
+                            new TagHelperAttributeDescriptor(
+                                "catchall-bound-string",
+                                "BoundRequiredString",
+                                typeof(string).FullName),
+                        },
+                        requiredAttributes: new[] { "catchall-unbound-required" }),
+                    new TagHelperDescriptor(
+                        tagName: "input",
+                        typeName: "InputTagHelper",
+                        assemblyName: "SomeAssembly",
+                        attributes: new[]
+                        {
+                            new TagHelperAttributeDescriptor(
+                                "input-bound-required-string",
+                                "BoundRequiredString",
+                                typeof(string).FullName),
+                            new TagHelperAttributeDescriptor(
+                                "input-bound-string",
+                                "BoundString",
+                                typeof(string).FullName)
+                        },
+                        requiredAttributes: new[] { "input-bound-required-string", "input-unbound-required" }),
+                };
+            }
+        }
+
         private static IEnumerable<TagHelperDescriptor> DuplicateTargetTagHelperDescriptors
         {
             get
@@ -206,6 +244,20 @@ namespace Microsoft.AspNet.Razor.Test.Generator
                         "AttributeTargetingTagHelpers.DesignTime",
                         AttributeTargetingTagHelperDescriptors,
                         AttributeTargetingTagHelperDescriptors,
+                        true
+                    },
+                    {
+                        "MinimizedTagHelpers",
+                        "MinimizedTagHelpers",
+                        MinimizedTagHelperDescriptors,
+                        MinimizedTagHelperDescriptors,
+                        false
+                    },
+                    {
+                        "MinimizedTagHelpers",
+                        "MinimizedTagHelpers.DesignTime",
+                        MinimizedTagHelperDescriptors,
+                        MinimizedTagHelperDescriptors,
                         true
                     }
                 };

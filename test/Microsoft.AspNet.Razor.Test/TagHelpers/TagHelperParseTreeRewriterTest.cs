@@ -8,16 +8,14 @@ using System.Linq;
 using Microsoft.AspNet.Razor.Generator;
 using Microsoft.AspNet.Razor.Parser;
 using Microsoft.AspNet.Razor.Parser.SyntaxTree;
-using Microsoft.AspNet.Razor.Parser.TagHelpers.Internal;
 using Microsoft.AspNet.Razor.TagHelpers;
 using Microsoft.AspNet.Razor.Test.Framework;
 using Microsoft.AspNet.Razor.Text;
-using Microsoft.AspNet.Razor.Tokenizer;
 using Xunit;
 
 namespace Microsoft.AspNet.Razor.Test.TagHelpers
 {
-    public class TagHelperParseTreeRewriterTest : CsHtmlMarkupParserTestBase
+    public class TagHelperParseTreeRewriterTest : TagHelperRewritingTestBase
     {
         public static TheoryData RequiredAttributeData
         {
@@ -1905,7 +1903,12 @@ namespace Microsoft.AspNet.Razor.Test.TagHelpers
                     {
                         "@{<!text /}",
                         buildPartialStatementBlock(
-                            () => new MarkupBlock(blockFactory.EscapedMarkupTagBlock("<", "text /}"))),
+                            () => new MarkupBlock(
+                                new MarkupTagBlock(
+                                    factory.Markup("<"),
+                                    factory.BangEscape(),
+                                    factory.Markup("text /"),
+                                    new MarkupBlock(factory.Markup("}"))))),
                         new []
                         {
                             new RazorError(
@@ -1992,7 +1995,7 @@ namespace Microsoft.AspNet.Razor.Test.TagHelpers
                                                 prefix: new LocationTagged<string>(string.Empty, 16, 0, 16),
                                                 value: new LocationTagged<string>("btn", 16, 0, 16))),
                                         factory.Markup("\"").With(SpanCodeGenerator.Null)),
-                                    factory.Markup("}")))),
+                                        new MarkupBlock(factory.Markup("}"))))),
                                 new []
                                 {
                                     new RazorError(
@@ -2023,7 +2026,8 @@ namespace Microsoft.AspNet.Razor.Test.TagHelpers
                                                 prefix: new LocationTagged<string>(string.Empty, 16, 0, 16),
                                                 value: new LocationTagged<string>("btn", 16, 0, 16))),
                                         factory.Markup("\"").With(SpanCodeGenerator.Null)),
-                                    factory.Markup(" /}")))),
+                                        factory.Markup(" /"),
+                                        new MarkupBlock(factory.Markup("}"))))),
                                 new []
                                 {
                                     new RazorError(
@@ -2108,7 +2112,13 @@ namespace Microsoft.AspNet.Razor.Test.TagHelpers
                     {
                         "@{<!p /}",
                         buildPartialStatementBlock(
-                            () => new MarkupBlock(blockFactory.EscapedMarkupTagBlock("<", "p /}"))),
+                            () => new MarkupBlock(
+                                new MarkupTagBlock(
+                                    factory.Markup("<"),
+                                    factory.BangEscape(),
+                                    factory.Markup("p /"),
+                                    new MarkupBlock(
+                                        factory.Markup("}"))))),
                         new []
                         {
                             new RazorError(
@@ -2195,7 +2205,7 @@ namespace Microsoft.AspNet.Razor.Test.TagHelpers
                                                 prefix: new LocationTagged<string>(string.Empty, 13, 0, 13),
                                                 value: new LocationTagged<string>("btn", 13, 0, 13))),
                                         factory.Markup("\"").With(SpanCodeGenerator.Null)),
-                                    factory.Markup("}")))),
+                                        new MarkupBlock(factory.Markup("}"))))),
                                 new []
                                 {
                                     new RazorError(
@@ -2226,7 +2236,9 @@ namespace Microsoft.AspNet.Razor.Test.TagHelpers
                                                 prefix: new LocationTagged<string>(string.Empty, 13, 0, 13),
                                                 value: new LocationTagged<string>("btn", 13, 0, 13))),
                                         factory.Markup("\"").With(SpanCodeGenerator.Null)),
-                                    factory.Markup(" /}")))),
+                                        factory.Markup(" /"),
+                                        new MarkupBlock(
+                                            factory.Markup("}"))))),
                                 new []
                                 {
                                     new RazorError(
@@ -3274,6 +3286,11 @@ namespace Microsoft.AspNet.Razor.Test.TagHelpers
                         "<p foo bar<strong>",
                         new MarkupBlock(
                             new MarkupTagHelperBlock("p",
+                                new List<KeyValuePair<string, SyntaxTreeNode>>
+                                {
+                                    new KeyValuePair<string, SyntaxTreeNode>("foo", null),
+                                    new KeyValuePair<string, SyntaxTreeNode>("bar", null)
+                                },
                                 new MarkupTagHelperBlock("strong"))),
                         new []
                         {
@@ -3327,7 +3344,7 @@ namespace Microsoft.AspNet.Razor.Test.TagHelpers
                                     new KeyValuePair<string, SyntaxTreeNode>(
                                         "class",
                                         new MarkupBlock(factory.Markup("btn"), factory.Markup(" bar="))),
-                                    new KeyValuePair<string, SyntaxTreeNode>("foo", factory.Markup(string.Empty))
+                                    new KeyValuePair<string, SyntaxTreeNode>("foo", null)
                                 },
                                 new MarkupTagHelperBlock("strong"))),
                         new []
@@ -3350,6 +3367,7 @@ namespace Microsoft.AspNet.Razor.Test.TagHelpers
                                 new List<KeyValuePair<string, SyntaxTreeNode>>
                                 {
                                     new KeyValuePair<string, SyntaxTreeNode>("class", new MarkupBlock(factory.Markup("btn"), factory.Markup(" bar="))),
+                                    new KeyValuePair<string, SyntaxTreeNode>("foo", null),
                                 })),
                         new RazorError[0]
                     },
@@ -3865,7 +3883,11 @@ namespace Microsoft.AspNet.Razor.Test.TagHelpers
                     {
                         "< p />",
                         new MarkupBlock(
-                            blockFactory.MarkupTagBlock("< p />"))
+                            new MarkupTagBlock(
+                                factory.Markup("<"),
+                                new MarkupBlock(
+                                    factory.Markup(" p")),
+                                factory.Markup(" />")))
                     },
                     {
                         "<input <p />",
@@ -4890,75 +4912,6 @@ namespace Microsoft.AspNet.Razor.Test.TagHelpers
             MarkupBlock expectedOutput)
         {
             RunParseTreeRewriterTest(documentContent, expectedOutput, "p", "div");
-        }
-
-        private void RunParseTreeRewriterTest(string documentContent,
-                                              MarkupBlock expectedOutput,
-                                              params string[] tagNames)
-        {
-            RunParseTreeRewriterTest(documentContent,
-                                     expectedOutput,
-                                     errors: Enumerable.Empty<RazorError>(),
-                                     tagNames: tagNames);
-        }
-
-        private void RunParseTreeRewriterTest(string documentContent,
-                                              MarkupBlock expectedOutput,
-                                              IEnumerable<RazorError> errors,
-                                              params string[] tagNames)
-        {
-            // Arrange
-            var providerContext = BuildProviderContext(tagNames);
-
-            // Act & Assert
-            EvaluateData(providerContext, documentContent, expectedOutput, errors);
-        }
-
-        private TagHelperDescriptorProvider BuildProviderContext(params string[] tagNames)
-        {
-            var descriptors = new List<TagHelperDescriptor>();
-
-            foreach (var tagName in tagNames)
-            {
-                descriptors.Add(
-                    new TagHelperDescriptor(tagName, tagName + "taghelper", "SomeAssembly"));
-            }
-
-            return new TagHelperDescriptorProvider(descriptors);
-        }
-
-        public override ParserContext CreateParserContext(ITextDocument input,
-                                                          ParserBase codeParser,
-                                                          ParserBase markupParser,
-                                                          ErrorSink errorSink)
-        {
-            return base.CreateParserContext(input, codeParser, markupParser, errorSink);
-        }
-
-        private void EvaluateData(TagHelperDescriptorProvider provider,
-                                  string documentContent,
-                                  MarkupBlock expectedOutput,
-                                  IEnumerable<RazorError> expectedErrors)
-        {
-            var errorSink = new ErrorSink();
-            var results = ParseDocument(documentContent, errorSink);
-            var rewritingContext = new RewritingContext(results.Document, errorSink);
-            new TagHelperParseTreeRewriter(provider).Rewrite(rewritingContext);
-            var rewritten = rewritingContext.SyntaxTree;
-            var actualErrors = errorSink.Errors.OrderBy(error => error.Location.AbsoluteIndex)
-                                               .ToList();
-
-            EvaluateRazorErrors(actualErrors, expectedErrors.ToList());
-            EvaluateParseTree(rewritten, expectedOutput);
-        }
-
-        private static SpanFactory CreateDefaultSpanFactory()
-        {
-            return new SpanFactory
-            {
-                MarkupTokenizerFactory = doc => new HtmlTokenizer(doc),
-                CodeTokenizerFactory = doc => new CSharpTokenizer(doc)
-            };
         }
     }
 }
