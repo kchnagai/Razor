@@ -7,6 +7,7 @@ using Microsoft.AspNet.Razor.Parser;
 using Microsoft.AspNet.Razor.Parser.SyntaxTree;
 using Microsoft.AspNet.Razor.Test.Framework;
 using Microsoft.AspNet.Razor.Text;
+using Microsoft.AspNet.Razor.Tokenizer;
 using Xunit;
 
 namespace Microsoft.AspNet.Razor.Test.Parser.Html
@@ -280,6 +281,176 @@ namespace Microsoft.AspNet.Razor.Test.Parser.Html
         {
             var content = Nested1000.ReadAllText();
             ParseDocument(content);
+        }
+
+        public static TheoryData ParseBlockData
+        {
+            get
+            {
+                var factory = CreateDefaultSpanFactory();
+
+                return new TheoryData<string, Block>
+                {
+                    {
+                        "<span foo='@@' />",
+                        new MarkupBlock(
+                            new MarkupTagBlock(
+                                factory.Markup("<span"),
+                                new MarkupBlock(
+                                    new AttributeBlockCodeGenerator("foo", new LocationTagged<string>(" foo='", 5, 0, 5), new LocationTagged<string>("'", 13, 0, 13)),
+                                    factory.Markup(" foo='").With(SpanCodeGenerator.Null),
+                                    factory.Markup("@").With(SpanCodeGenerator.Null),
+                                    factory.Markup("@"),
+                                    factory.Markup("'").With(SpanCodeGenerator.Null)),
+                                factory.Markup(" />")))
+                    },
+                    {
+                        "<span foo='abc@@' />",
+                        new MarkupBlock(
+                            new MarkupTagBlock(
+                                factory.Markup("<span"),
+                                new MarkupBlock(
+                                    new AttributeBlockCodeGenerator("foo", new LocationTagged<string>(" foo='", 5, 0, 5), new LocationTagged<string>("'", 16, 0, 16)),
+                                    factory.Markup(" foo='").With(SpanCodeGenerator.Null),
+                                    factory.Markup("abc").With(new LiteralAttributeCodeGenerator(new LocationTagged<string>(string.Empty, 11, 0, 11), new LocationTagged<string>("abc", 11, 0, 11))),
+                                    factory.Markup("@").With(SpanCodeGenerator.Null),
+                                    factory.Markup("@"),
+                                    factory.Markup("'").With(SpanCodeGenerator.Null)),
+                                factory.Markup(" />")))
+                    },
+                    {
+                        "<span foo='@@def' />",
+                        new MarkupBlock(
+                            new MarkupTagBlock(
+                                factory.Markup("<span"),
+                                new MarkupBlock(
+                                    new AttributeBlockCodeGenerator("foo", new LocationTagged<string>(" foo='", 5, 0, 5), new LocationTagged<string>("'", 16, 0, 16)),
+                                    factory.Markup(" foo='").With(SpanCodeGenerator.Null),
+                                    factory.Markup("@").With(SpanCodeGenerator.Null),
+                                    factory.Markup("@"),
+                                    factory.Markup("def").With(new LiteralAttributeCodeGenerator(new LocationTagged<string>(string.Empty, 13, 0, 13), new LocationTagged<string>("def", 13, 0, 13))),
+                                    factory.Markup("'").With(SpanCodeGenerator.Null)),
+                                factory.Markup(" />")))
+                    },
+                    {
+                        "<span foo='abc @@ def' />",
+                        new MarkupBlock(
+                            new MarkupTagBlock(
+                                factory.Markup("<span"),
+                                new MarkupBlock(
+                                    new AttributeBlockCodeGenerator("foo", new LocationTagged<string>(" foo='", 5, 0, 5), new LocationTagged<string>("'", 21, 0, 21)),
+                                    factory.Markup(" foo='").With(SpanCodeGenerator.Null),
+                                    factory.Markup("abc").With(new LiteralAttributeCodeGenerator(new LocationTagged<string>(string.Empty, 11, 0, 11), new LocationTagged<string>("abc", 11, 0, 11))),
+                                    factory.Markup(" "),
+                                    factory.Markup("@").With(SpanCodeGenerator.Null),
+                                    factory.Markup("@"),
+                                    factory.Markup(" def").With(new LiteralAttributeCodeGenerator(new LocationTagged<string>(" ", 17, 0, 17), new LocationTagged<string>("def", 18, 0, 18))),
+                                    factory.Markup("'").With(SpanCodeGenerator.Null)),
+                                factory.Markup(" />")))
+                    },
+                    {
+                        "<span foo='@@@DateTime.Now' />",
+                        new MarkupBlock(
+                            new MarkupTagBlock(
+                                factory.Markup("<span"),
+                                new MarkupBlock(
+                                    new AttributeBlockCodeGenerator("foo", new LocationTagged<string>(" foo='", 5, 0, 5), new LocationTagged<string>("'", 26, 0, 26)),
+                                    factory.Markup(" foo='").With(SpanCodeGenerator.Null),
+                                    factory.Markup("@").With(SpanCodeGenerator.Null),
+                                    factory.Markup("@"),
+                                    new MarkupBlock(
+                                        new DynamicAttributeBlockCodeGenerator(new LocationTagged<string>(string.Empty, 13, 0, 13), 13, 0, 13),
+                                        new ExpressionBlock(
+                                            factory.CodeTransition(),
+                                            factory.Code("DateTime.Now")
+                                                .AsImplicitExpression(CSharpCodeParser.DefaultKeywords)
+                                                .Accepts(AcceptedCharacters.NonWhiteSpace))),
+                                    factory.Markup("'").With(SpanCodeGenerator.Null)),
+                                factory.Markup(" />")))
+                    },
+                    {
+                        "<span foo='@DateTime.Now @@' />",
+                        new MarkupBlock(
+                            new MarkupTagBlock(
+                                factory.Markup("<span"),
+                                new MarkupBlock(
+                                    new AttributeBlockCodeGenerator("foo", new LocationTagged<string>(" foo='", 5, 0, 5), new LocationTagged<string>("'", 27, 0, 27)),
+                                    factory.Markup(" foo='").With(SpanCodeGenerator.Null),
+                                    new MarkupBlock(
+                                        new DynamicAttributeBlockCodeGenerator(new LocationTagged<string>(string.Empty, 11, 0, 11), 11, 0, 11),
+                                        new ExpressionBlock(
+                                            factory.CodeTransition(),
+                                            factory.Code("DateTime.Now")
+                                                .AsImplicitExpression(CSharpCodeParser.DefaultKeywords)
+                                                .Accepts(AcceptedCharacters.NonWhiteSpace))),
+                                    factory.Markup(" "),
+                                    factory.Markup("@").With(SpanCodeGenerator.Null),
+                                    factory.Markup("@"),
+                                    factory.Markup("'").With(SpanCodeGenerator.Null)),
+                                factory.Markup(" />")))
+                    },
+                    {
+                        "<span foo='abc@def.com @@' />",
+                        new MarkupBlock(
+                            new MarkupTagBlock(
+                                factory.Markup("<span"),
+                                new MarkupBlock(
+                                    new AttributeBlockCodeGenerator("foo", new LocationTagged<string>(" foo='", 5, 0, 5), new LocationTagged<string>("'", 25, 0, 25)),
+                                    factory.Markup(" foo='").With(SpanCodeGenerator.Null),
+                                    factory.Markup("abc@def.com").With(new LiteralAttributeCodeGenerator(new LocationTagged<string>(string.Empty, 11, 0, 11), new LocationTagged<string>("abc@def.com", 11, 0, 11))),
+                                    factory.Markup(" "),
+                                    factory.Markup("@").With(SpanCodeGenerator.Null),
+                                    factory.Markup("@"),
+                                    factory.Markup("'").With(SpanCodeGenerator.Null)),
+                                factory.Markup(" />")))
+                    },
+                    {
+                        "<span foo='abc@@def.com @@' />",
+                        new MarkupBlock(
+                            new MarkupTagBlock(
+                                factory.Markup("<span"),
+                                new MarkupBlock(
+                                    new AttributeBlockCodeGenerator("foo", new LocationTagged<string>(" foo='", 5, 0, 5), new LocationTagged<string>("'", 26, 0, 26)),
+                                    factory.Markup(" foo='").With(SpanCodeGenerator.Null),
+                                    factory.Markup("abc").With(new LiteralAttributeCodeGenerator(new LocationTagged<string>(string.Empty, 11, 0, 11), new LocationTagged<string>("abc", 11, 0, 11))),
+                                    factory.Markup("@").With(SpanCodeGenerator.Null),
+                                    factory.Markup("@"),
+                                    factory.Markup("def.com").With(new LiteralAttributeCodeGenerator(new LocationTagged<string>(string.Empty, 16, 0, 16), new LocationTagged<string>("def.com", 16, 0, 16))),
+                                    factory.Markup(" "),
+                                    factory.Markup("@").With(SpanCodeGenerator.Null),
+                                    factory.Markup("@"),
+                                    factory.Markup("'").With(SpanCodeGenerator.Null)),
+                                factory.Markup(" />")))
+                    },
+                    {
+                        "<span foo='@@",
+                        new MarkupBlock(
+                            new MarkupTagBlock(
+                                factory.Markup("<span"),
+                                new MarkupBlock(
+                                    new AttributeBlockCodeGenerator("foo", new LocationTagged<string>(" foo='", 5, 0, 5), new LocationTagged<string>(string.Empty, 13, 0, 13)),
+                                    factory.Markup(" foo='").With(SpanCodeGenerator.Null),
+                                    factory.Markup("@").With(SpanCodeGenerator.Null),
+                                    factory.Markup("@"))))
+                    },
+                };
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(ParseBlockData))]
+        public void ParseBlock_WithDoubleTransition_DoesNotThrow(string input, Block expected)
+        {
+            ParseDocumentTest(input, expected);
+        }
+
+        private static SpanFactory CreateDefaultSpanFactory()
+        {
+            return new SpanFactory
+            {
+                MarkupTokenizerFactory = doc => new HtmlTokenizer(doc),
+                CodeTokenizerFactory = doc => new CSharpTokenizer(doc)
+            };
         }
     }
 }

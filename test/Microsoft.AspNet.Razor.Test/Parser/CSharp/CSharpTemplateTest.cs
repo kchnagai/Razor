@@ -3,9 +3,11 @@
 
 using System;
 using Microsoft.AspNet.Razor.Editor;
+using Microsoft.AspNet.Razor.Generator;
 using Microsoft.AspNet.Razor.Parser;
 using Microsoft.AspNet.Razor.Parser.SyntaxTree;
 using Microsoft.AspNet.Razor.Test.Framework;
+using Microsoft.AspNet.Razor.Text;
 using Microsoft.AspNet.Razor.Tokenizer.Symbols;
 using Xunit;
 
@@ -270,6 +272,50 @@ namespace Microsoft.AspNet.Razor.Test.Parser.CSharp
                                Factory.MetaCode("}").Accepts(AcceptedCharacters.None)
                                ),
                            GetNestedTemplateError(69));
+        }
+
+        private const string TestTemplateWithDoubleTransitionCode = " @<p foo='@@'>Foo #@item</p>";
+
+        private TemplateBlock TestTemplateWithDoubleTransition()
+        {
+            return new TemplateBlock(
+                new MarkupBlock(
+                    Factory.MarkupTransition(),
+                    new MarkupTagBlock(
+                        Factory.Markup("<p"),
+                        new MarkupBlock(
+                            new AttributeBlockCodeGenerator("foo", new LocationTagged<string>(" foo='", 46, 0, 46), new LocationTagged<string>("'", 54, 0, 54)),
+                            Factory.Markup(" foo='").With(SpanCodeGenerator.Null),
+                            Factory.Markup("@").With(SpanCodeGenerator.Null),
+                            Factory.Markup("@"),
+                            Factory.Markup("'").With(SpanCodeGenerator.Null)),
+                        Factory.Markup(">").Accepts(AcceptedCharacters.None)),
+                    Factory.Markup("Foo #"),
+                    new ExpressionBlock(
+                        Factory.CodeTransition(),
+                        Factory.Code("item")
+                            .AsImplicitExpression(CSharpCodeParser.DefaultKeywords)
+                            .Accepts(AcceptedCharacters.NonWhiteSpace)
+                        ),
+                    new MarkupTagBlock(
+                        Factory.Markup("</p>").Accepts(AcceptedCharacters.None))
+                    )
+                );
+        }
+
+        [Fact]
+        public void ParseBlock_WithDoubleTransition_DoesNotThrow()
+        {
+            ParseBlockTest("{ var foo = bar; Html.ExecuteTemplate(foo," + TestTemplateWithDoubleTransitionCode + "); }",
+                new StatementBlock(
+                    Factory.MetaCode("{").Accepts(AcceptedCharacters.None),
+                    Factory.Code(" var foo = bar; Html.ExecuteTemplate(foo, ")
+                        .AsStatement()
+                        .AutoCompleteWith(autoCompleteString: null),
+                    TestTemplateWithDoubleTransition(),
+                    Factory.Code("); ").AsStatement(),
+                    Factory.MetaCode("}").Accepts(AcceptedCharacters.None)
+                    ));
         }
 
         private static RazorError GetNestedTemplateError(int characterIndex)
