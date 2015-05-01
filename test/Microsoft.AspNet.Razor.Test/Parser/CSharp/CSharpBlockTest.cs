@@ -908,6 +908,25 @@ catch(bar) { baz(); }", BlockType.Statement, SpanKind.Code);
                             factory.EmptyCSharp().AsStatement(),
                             factory.MetaCode("}").Accepts(AcceptedCharacters.None))
                     },
+                    {
+                        @"{<span foo=""/^[a-z0-9!#$%&'*+\/=?^_`{|}~.-]+@@[a-z0-9]([a-z0-9-]*[a-z0-9])?\.([a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/i"" />}",
+                        new StatementBlock(
+                            factory.MetaCode("{").Accepts(AcceptedCharacters.None),
+                            new MarkupBlock(
+                                new MarkupTagBlock(
+                                    factory.Markup("<span"),
+                                    new MarkupBlock(
+                                        new AttributeBlockCodeGenerator("foo", new LocationTagged<string>(" foo=\"", 6, 0, 6), new LocationTagged<string>("\"", 112, 0, 112)),
+                                        factory.Markup(" foo=\"").With(SpanCodeGenerator.Null),
+                                        factory.Markup(@"/^[a-z0-9!#$%&'*+\/=?^_`{|}~.-]+").With(new LiteralAttributeCodeGenerator(new LocationTagged<string>(string.Empty, 12, 0, 12), new LocationTagged<string>(@"/^[a-z0-9!#$%&'*+\/=?^_`{|}~.-]+", 12, 0, 12))),
+                                        factory.Markup("@").With(SpanCodeGenerator.Null),
+                                        factory.Markup("@"),
+                                        factory.Markup(@"[a-z0-9]([a-z0-9-]*[a-z0-9])?\.([a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/i").With(new LiteralAttributeCodeGenerator(new LocationTagged<string>(string.Empty, 46, 0, 46), new LocationTagged<string>(@"[a-z0-9]([a-z0-9-]*[a-z0-9])?\.([a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/i", 46, 0, 46))),
+                                        factory.Markup("\"").With(SpanCodeGenerator.Null)),
+                                factory.Markup(" />").Accepts(AcceptedCharacters.None))),
+                            factory.EmptyCSharp().AsStatement(),
+                            factory.MetaCode("}").Accepts(AcceptedCharacters.None))
+                    },
                 };
             }
         }

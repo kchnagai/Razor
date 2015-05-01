@@ -433,6 +433,21 @@ namespace Microsoft.AspNet.Razor.Test.Parser.Html
                                     factory.Markup("@").With(SpanCodeGenerator.Null),
                                     factory.Markup("@"))))
                     },
+                    {
+                        @"<span foo=""/^[a-z0-9!#$%&'*+\/=?^_`{|}~.-]+@@[a-z0-9]([a-z0-9-]*[a-z0-9])?\.([a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/i"" />",
+                        new MarkupBlock(
+                            new MarkupTagBlock(
+                                factory.Markup("<span"),
+                                new MarkupBlock(
+                                    new AttributeBlockCodeGenerator("foo", new LocationTagged<string>(" foo=\"", 5, 0, 5), new LocationTagged<string>("\"", 111, 0, 111)),
+                                    factory.Markup(" foo=\"").With(SpanCodeGenerator.Null),
+                                    factory.Markup(@"/^[a-z0-9!#$%&'*+\/=?^_`{|}~.-]+").With(new LiteralAttributeCodeGenerator(new LocationTagged<string>(string.Empty, 11, 0, 11), new LocationTagged<string>(@"/^[a-z0-9!#$%&'*+\/=?^_`{|}~.-]+", 11, 0, 11))),
+                                    factory.Markup("@").With(SpanCodeGenerator.Null),
+                                    factory.Markup("@"),
+                                    factory.Markup(@"[a-z0-9]([a-z0-9-]*[a-z0-9])?\.([a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/i").With(new LiteralAttributeCodeGenerator(new LocationTagged<string>(string.Empty, 45, 0, 45), new LocationTagged<string>(@"[a-z0-9]([a-z0-9-]*[a-z0-9])?\.([a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/i", 45, 0, 45))),
+                                    factory.Markup("\"").With(SpanCodeGenerator.Null)),
+                                factory.Markup(" />")))
+                    },
                 };
             }
         }
