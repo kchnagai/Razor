@@ -316,7 +316,7 @@ namespace Microsoft.AspNet.Razor.Parser
                 var matched = RemoveTag(tags, tagName, tagStart);
 
                 if (tags.Count == 0 &&
-                    // Note tagName may contain a '!' escape character. This ensures </!text> doesn't match here. 
+                    // Note tagName may contain a '!' escape character. This ensures </!text> doesn't match here.
                     // </!text> tags are treated like any other escaped HTML end tag.
                     string.Equals(tagName, SyntaxConstants.TextTagName, StringComparison.OrdinalIgnoreCase) &&
                     matched)
@@ -471,11 +471,21 @@ namespace Microsoft.AspNet.Razor.Parser
                 return;
             }
 
+            // Minimized attribute
+            // Need to modify this code to account for space inbetween equals when
+            // https://github.com/aspnet/Razor/issues/123 is completed.
             if (!At(HtmlSymbolType.Equals))
             {
-                // Saw a space or newline after the name, so just skip this attribute and continue around the loop
-                Accept(whitespace);
-                Accept(name);
+                // Output anything prior to the attribute, in most cases this will be the tag name:
+                // |<input| checked />
+                Output(SpanKind.Markup);
+                using (Context.StartBlock(BlockType.Markup))
+                {
+                    Accept(whitespace);
+                    Accept(name);
+                    Output(SpanKind.Markup);
+                }
+
                 return;
             }
 
@@ -719,7 +729,7 @@ namespace Microsoft.AspNet.Razor.Parser
             Tuple<HtmlSymbol, SourceLocation> tag = Tuple.Create(tagName, _lastTagStart);
 
             if (tags.Count == 0 &&
-                // Note tagName may contain a '!' escape character. This ensures <!text> doesn't match here. 
+                // Note tagName may contain a '!' escape character. This ensures <!text> doesn't match here.
                 // <!text> tags are treated like any other escaped HTML start tag.
                 string.Equals(tag.Item1.Content, SyntaxConstants.TextTagName, StringComparison.OrdinalIgnoreCase))
             {
