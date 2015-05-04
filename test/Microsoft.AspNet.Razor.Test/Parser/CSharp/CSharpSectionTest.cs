@@ -446,7 +446,7 @@ namespace Microsoft.AspNet.Razor.Test.Parser.CSharp
                     Factory.EmptyHtml()));
         }
 
-        public static TheoryData ParseBlockData
+        public static TheoryData SectionWithEscapedTransitionData
         {
             get
             {
@@ -468,8 +468,8 @@ namespace Microsoft.AspNet.Razor.Test.Parser.CSharp
                                     new MarkupBlock(
                                         new AttributeBlockCodeGenerator("foo", new LocationTagged<string>(" foo='", 17, 0, 17), new LocationTagged<string>("'", 25, 0, 25)),
                                         factory.Markup(" foo='").With(SpanCodeGenerator.Null),
-                                        factory.Markup("@").With(SpanCodeGenerator.Null),
-                                        factory.Markup("@"),
+                                        factory.Markup("@").With(SpanCodeGenerator.Null).Accepts(AcceptedCharacters.None),
+                                        factory.Markup("@").Accepts(AcceptedCharacters.None),
                                         factory.Markup("'").With(SpanCodeGenerator.Null)),
                                 factory.Markup(" />"))),
                             factory.MetaCode("}").Accepts(AcceptedCharacters.None)),
@@ -497,8 +497,8 @@ namespace Microsoft.AspNet.Razor.Test.Parser.CSharp
                                                     .AsImplicitExpression(CSharpCodeParser.DefaultKeywords)
                                                     .Accepts(AcceptedCharacters.NonWhiteSpace))),
                                     factory.Markup(" "),
-                                    factory.Markup("@").With(SpanCodeGenerator.Null),
-                                    factory.Markup("@"),
+                                    factory.Markup("@").With(SpanCodeGenerator.Null).Accepts(AcceptedCharacters.None),
+                                    factory.Markup("@").Accepts(AcceptedCharacters.None),
                                     factory.Markup("'").With(SpanCodeGenerator.Null)),
                                 factory.Markup(" />"))),
                             factory.MetaCode("}").Accepts(AcceptedCharacters.None)),
@@ -509,7 +509,7 @@ namespace Microsoft.AspNet.Razor.Test.Parser.CSharp
         }
 
         [Theory]
-        [MemberData(nameof(ParseBlockData))]
+        [MemberData(nameof(SectionWithEscapedTransitionData))]
         public void ParseSectionBlock_WithDoubleTransition_DoesNotThrow(string input, Block expected)
         {
             ParseDocumentTest(input, expected);

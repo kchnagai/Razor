@@ -561,13 +561,12 @@ namespace Microsoft.AspNet.Razor.Parser
                 if (NextIs(HtmlSymbolType.Transition))
                 {
                     // Render a single "@" in place of "@@".
-                    var transition = CurrentSymbol;
-                    NextToken();
-                    Output(SpanKind.Markup);
-                    Accept(transition);
-                    Span.CodeGenerator = SpanCodeGenerator.Null;
                     Output(SpanKind.Markup);
                     AcceptAndMoveNext();
+                    Span.CodeGenerator = SpanCodeGenerator.Null;
+                    Output(SpanKind.Markup, AcceptedCharacters.None);
+                    AcceptAndMoveNext();
+                    Output(SpanKind.Markup, AcceptedCharacters.None);
                 }
                 else
                 {
