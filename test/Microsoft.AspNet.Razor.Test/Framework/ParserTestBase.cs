@@ -339,7 +339,7 @@ namespace Microsoft.AspNet.Razor.Test.Framework
 
             if (actual.Value == null && expected.Value == null)
             {
-                collector.AddMessage("{0} - PASSED :: Attribute values match", expected.Key);
+                collector.AddMessage("{0} - PASSED :: Minimized attribute values match", expected.Key);
             }
             else
             {

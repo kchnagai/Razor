@@ -21,7 +21,7 @@ namespace Microsoft.AspNet.Razor.Runtime.TagHelpers
         object Value { get; }
 
         /// <summary>
-        /// Indicates whether the attribute is minimized or not.
+        /// Gets an indication whether the attribute is minimized or not.
         /// </summary>
         /// <remarks>If <c>true</c>, <see cref="Value"/> will be ignored.</remarks>
         bool Minimized { get; }

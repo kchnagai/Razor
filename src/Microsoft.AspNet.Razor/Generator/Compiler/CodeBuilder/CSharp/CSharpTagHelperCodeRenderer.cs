@@ -353,7 +353,7 @@ namespace Microsoft.AspNet.Razor.Generator.Compiler.CSharp
                         _tagHelperContext.ExecutionContextAddHtmlAttributeMethodName)
                     .WriteStringLiteral(htmlAttribute.Key);
 
-                // If we have a minimized attribute we don't want to provide a value
+                // If we have a minimized attribute there is no value
                 if (attributeValue != null)
                 {
                     _writer.WriteParameterSeparator()

@@ -472,8 +472,6 @@ namespace Microsoft.AspNet.Razor.Parser
             }
 
             // Minimized attribute
-            // Need to modify this code to account for space inbetween equals when
-            // https://github.com/aspnet/Razor/issues/123 is completed.
             if (!At(HtmlSymbolType.Equals))
             {
                 // Output anything prior to the attribute, in most cases this will be the tag name:

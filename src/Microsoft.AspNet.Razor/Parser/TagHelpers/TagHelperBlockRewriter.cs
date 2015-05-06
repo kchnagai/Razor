@@ -241,7 +241,6 @@ namespace Microsoft.AspNet.Razor.Parser.TagHelpers.Internal
             }
 
             // If we're not after an equal then we should treat the value as if it were a minimized attribute.
-            // Aka null value.
             var attributeValueBuilder = afterEquals ? builder : null;
             attribute = CreateMarkupAttribute(name, attributeValueBuilder, attributeValueTypes);
 

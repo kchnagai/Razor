@@ -181,7 +181,7 @@ namespace Microsoft.AspNet.Razor.Runtime.TagHelpers
         }
 
         [Fact]
-        public void AddHtmlAttribute_MaintainsHTMLAttributes_Unminimized()
+        public void AddHtmlAttribute_MaintainsHTMLAttributes()
         {
             // Arrange
             var executionContext = new TagHelperExecutionContext("p", selfClosing: false);
@@ -225,7 +225,7 @@ namespace Microsoft.AspNet.Razor.Runtime.TagHelpers
         }
 
         [Fact]
-        public void AddHtmlAttribute_MaintainsHTMLAttributes_Mixed()
+        public void AddHtmlAttribute_MaintainsHTMLAttributes_SomeMinimized()
         {
             // Arrange
             var executionContext = new TagHelperExecutionContext("input", selfClosing: true);
